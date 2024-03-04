@@ -3,7 +3,9 @@
 ;
 
 section .bss
-buffer:     RESB    100     ; 100 bytes
+buffer:     RESD    100     ; 100 bytes
+stat_struct RESB    88      ; 88  bytes
+print_buff  RESB    64       ; 4 bytes
 
 section .data
 msg1    db  'ls for:    '       ;
@@ -16,14 +18,31 @@ _start:
     mov     rax, msg1
     call    print
 
-    mov     rax, 79
-    mov     rdi, buffer
-    mov     rsi, 100
-    syscall
 
     mov     rax, buffer
-    call    printLF
 
+    call    getwd
+    call    printLF
+    ;cwd on rax
+
+    mov     rdi, rax
+    mov     rsi, stat_struct
+    mov     rax, 4
+    syscall
+
+    xor rax, rax
+
+    mov rax, [stat_struct]
+    
+    add eax, 48
+    mov [print_buff], eax
+    mov eax, 0Ah 
+    mov [print_buff + 1], eax 
+    mov eax, 00h
+    mov [print_buff + 2], eax
+    
+    mov rax, print_buff
+    call print
     ; exit /w code 0
     call    exit
 
@@ -76,4 +95,20 @@ exit:
     mov     rax, 60
     mov     rdi, 0
     syscall
+    ret
+
+; takes buffer on rax; returns buffer on rax
+getwd:
+    push    rdi
+    push    rsi
+
+    mov     rdi, rax
+    mov     rax, 79
+    mov     rsi, 100
+    syscall
+
+    mov     rax, rdi
+
+    pop     rsi
+    pop     rdi
     ret
